@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type {KreditKonstellation} from "./useKredite.ts";
 import {computed} from "vue";
 import {formatMoney, formatPercent} from "./utils.ts";
 import {useTilgung} from "./useTilgung.ts";
 import LabelValue from "./LabelValue.vue";
+import type {KreditKonstellation} from "./types.ts";
 
 const props = defineProps<KreditKonstellation>()
 

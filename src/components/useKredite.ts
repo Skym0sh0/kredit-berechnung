@@ -1,17 +1,20 @@
 import {computed, onMounted, ref} from "vue";
-import type {TilgungsProps} from "./useTilgung.ts";
-
-export type KreditKonstellation = {
-    title: string
-    kreditTeile: Array<TilgungsProps & { title: string }>
-}
+import {type KreditKonstellation, KreditKonstellationSchema} from "./types.ts";
 
 export const useKredite = () => {
     const kredite = ref<KreditKonstellation[]>([])
 
     onMounted(() => {
-        fetch('/kredite.json')
+        fetch('/secret/kredite.json')
             .then(res => res.json())
+            .then(data => {
+                const parsed = KreditKonstellationSchema.array().safeParse(data)
+
+                if (!parsed.success)
+                    throw new Error("Kredit Schema passt nicht: " + parsed.error)
+
+                return parsed.data
+            })
             .then(data => {
                 kredite.value = data;
             })
