@@ -6,6 +6,7 @@ export type TilgungsProps = {
     sollzinsProJahr: number
     zinsbindungInJahren: number
     monatlicheRate: number
+    tilgungsfreieAnlaufMonate: number
 }
 
 export type FinanceInfo = {
@@ -31,7 +32,7 @@ export const useTilgung = (props: TilgungsProps) => {
         const data: MonthlyInfo[] = [
             {
                 id: 'start-month',
-               year: 0,
+                year: 0,
                 month: 0,
                 remaining: -props.darlehensbetrag,
                 zahlung: -props.darlehensbetrag,
@@ -45,7 +46,9 @@ export const useTilgung = (props: TilgungsProps) => {
             const zinsen = remaining * props.sollzinsProJahr * (1 / 12)
             const tilgung = Math.min(Math.round(props.monatlicheRate * 100 - zinsen), remaining)
 
-            remaining = remaining - tilgung
+            if (month >= (props.tilgungsfreieAnlaufMonate ?? 0))
+                remaining = remaining - tilgung
+
             month++
 
             data.push({

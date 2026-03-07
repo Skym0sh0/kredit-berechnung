@@ -1,3 +1,8 @@
+const currencyFormat = new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR'
+})
+
 export const formatMoney = (value?: number): string => {
     if (value === undefined)
         return ""
@@ -5,10 +10,7 @@ export const formatMoney = (value?: number): string => {
     if (Number.isNaN(value))
         return "-"
 
-    return new Intl.NumberFormat('de-DE', {
-        style: 'currency',
-        currency: 'EUR'
-    }).format(value)
+    return currencyFormat.format(value)
 }
 
 export const formatPercent = (value ?: number, precision: number = 2): string => {
@@ -18,5 +20,9 @@ export const formatPercent = (value ?: number, precision: number = 2): string =>
     if (Number.isNaN(value))
         return "-"
 
-    return `${(value * 100).toFixed(precision)} %`
+    return new Intl.NumberFormat('de-DE', {
+        style: 'percent',
+        minimumFractionDigits: precision,
+        maximumFractionDigits: precision,
+    }).format(value)
 }
