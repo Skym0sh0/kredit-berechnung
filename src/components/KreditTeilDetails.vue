@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import Tilgungsplan from "./Tilgungsplan.vue";
+import {formatMoney, formatPercent} from "./utils.ts";
+import LabelValue from "./LabelValue.vue";
+import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
+
+const props = defineProps<KreditEigenschaften & { idx: number }>()
+</script>
+
+<template>
+  <q-card class="q-pa-xs">
+    <q-card-section>
+      <div class="text-h6">Finanzierungsbaustein {{ idx + 1 }}</div>
+      <div class="text-subtitle2">{{ title }}</div>
+    </q-card-section>
+
+    <q-card-section>
+      <LabelValue label="Name" :value="props.title"/>
+      <LabelValue label="Darlehensbetrag" :value="formatMoney(props.darlehensbetrag)"/>
+      <LabelValue label="Sollzins" :value="formatPercent(props.sollzinsProJahr,3)"/>
+      <LabelValue label="Effektivzins" :value="formatPercent(props.effektivZinsProJahr,3)"/>
+      <LabelValue label="Zinsbindung" :value="props.zinsbindungInJahren + ' Jahre'"/>
+      <LabelValue label="Anfängliche Tilgung" :value="formatPercent(props.anfangsTilgung,3)"/>
+      <LabelValue label="Monatliche Rate" :value="formatMoney(props.monatlicheRate)"/>
+    </q-card-section>
+
+    <q-card-section>
+      <q-expansion-item label="Tilgungsplan"
+                        icon="currency_exchange"
+                        expand-separator
+                        header-class="bg-grey-2">
+        <Tilgungsplan v-bind="props"/>
+      </q-expansion-item>
+    </q-card-section>
+  </q-card>
+
+</template>
+
+<style scoped>
+
+</style>

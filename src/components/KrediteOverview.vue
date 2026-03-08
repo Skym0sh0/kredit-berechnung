@@ -3,10 +3,11 @@ import {useKredite} from "./useKredite.ts";
 import KreditPlan from "./KreditPlan.vue";
 import {computed} from "vue";
 import {groupBy} from "lodash";
+import type {KreditKonstellation} from "../types/KreditKonstellation.ts";
 
 const kredite = useKredite()
 
-const krediteProAnbieter = computed(() => {
+const krediteProAnbieter = computed<Array<{ anbieter: string; kredite: KreditKonstellation[] }>>(() => {
   const byAnbieter = groupBy(kredite.value, v => v.anbieter)
 
   return Object.entries(byAnbieter)

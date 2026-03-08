@@ -1,10 +1,5 @@
 import {z} from 'zod';
-
-export const BereitstellungszeitSchema = z.object({
-    zinsfreieZeitInMonaten: z.number(),
-    zinsProMonat: z.number(),
-    // zinsProMonatWaehrendBereitstellung: z.optional(z.number()),
-})
+import {type Bereitstellungszeit, BereitstellungszeitSchema} from "./Bereitstellungszeit.ts";
 
 export const KreditEigenschaftenSchema = z.object({
     title: z.string(),
@@ -24,18 +19,12 @@ export type KreditEigenschaften = {
     title: string,
     darlehensbetrag: number,
     sollzinsProJahr: number,
+    effektivZinsProJahr?: number,
+    anfangsTilgung?: number,
+    tilgungsfreieAnlaufMonate?: number,
     zinsbindungInJahren: number,
     monatlicheRate: number,
-}
 
-export const KreditKonstellationSchema = z.object({
-    anbieter: z.string(),
-    title: z.string(),
-    kreditTeile: z.array(KreditEigenschaftenSchema)
-})
-
-export type KreditKonstellation = {
-    anbieter: string,
-    title: string,
-    kreditTeile: KreditEigenschaften[]
+    monatlicheRateTilgungsfreieZeit?: number,
+    bereitstellung?: Bereitstellungszeit
 }

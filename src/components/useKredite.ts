@@ -1,6 +1,6 @@
 import {computed, onMounted, ref} from "vue";
-import {type KreditKonstellation, KreditKonstellationSchema} from "./types.ts";
 import type {ZodError} from "zod";
+import {type KreditKonstellation, KreditKonstellationSchema} from "../types/KreditKonstellation.ts";
 
 class SchemaError extends Error {
     public readonly data?: unknown

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import type {QTableProps} from "quasar";
-import {type TilgungsProps, useTilgung} from "./useTilgung.ts";
+import {useTilgung} from "./useTilgung.ts";
 import {formatMoney, formatPercent} from "./utils.ts";
+import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
 
-const props = defineProps<TilgungsProps>()
+const props = defineProps<KreditEigenschaften>()
 
 const {monthlyData, yearlyData} = useTilgung(props)
 

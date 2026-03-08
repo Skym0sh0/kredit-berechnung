@@ -1,5 +1,6 @@
 import {computed} from "vue";
 import {groupBy, sortBy} from "lodash";
+import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
 
 export type TilgungsProps = {
     darlehensbetrag: number
@@ -27,7 +28,7 @@ export type YearlyInfo = FinanceInfo & {
     month?: unknown
 }
 
-export const useTilgung = (props: TilgungsProps) => {
+export const useTilgung = (props: KreditEigenschaften) => {
     const monthlyData = computed<MonthlyInfo[]>(() => {
         const data: MonthlyInfo[] = [
             {

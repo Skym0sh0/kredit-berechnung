@@ -3,7 +3,7 @@ import {computed} from "vue";
 import {formatMoney, formatPercent} from "./utils.ts";
 import {useTilgung} from "./useTilgung.ts";
 import LabelValue from "./LabelValue.vue";
-import type {KreditKonstellation} from "./types.ts";
+import type {KreditKonstellation} from "../types/KreditKonstellation.ts";
 
 const props = defineProps<KreditKonstellation>()
 
@@ -21,8 +21,13 @@ const parts = computed(() =>
     props.kreditTeile.map(part => {
       const {restschuld} = useTilgung(part)
 
-      return {restschuld: -restschuld.value, title: part.title, zinsbindungInJahren: part.zinsbindungInJahren}
-    }))
+      return {
+        restschuld: -restschuld.value,
+        title: part.title,
+        zinsbindungInJahren: part.zinsbindungInJahren
+      }
+    })
+)
 
 const restschuld = computed(() => parts.value.map(v => v.restschuld).reduce((acc, cur) => acc + cur, 0))
 
@@ -53,7 +58,9 @@ const link = computed(() => ({name: 'details', params: {anbieter: props.anbieter
         <li>
           <LabelValue label="Restschuld" :value="formatMoney(restschuld)"/>
           <div class="text-caption text-grey q-px-md">
-            <LabelValue v-for="p in parts" :key="p.title" :label="`${p.title} nach ${p.zinsbindungInJahren}`"
+            <LabelValue v-for="p in parts"
+                        :key="p.title"
+                        :label="`${p.title} nach ${p.zinsbindungInJahren}`"
                         :value="formatMoney(p.restschuld)"/>
           </div>
         </li>
