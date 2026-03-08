@@ -8,7 +8,9 @@
     <RouterLink to="/" class="text-h6 text-white">Tilgungspläne</RouterLink>
   </nav>
 
-  <main>
+  <div class="q-mb-sm"/>
+
+  <main class="bg-green-1 q-pa-sm">
     <RouterView/>
   </main>
 </template>

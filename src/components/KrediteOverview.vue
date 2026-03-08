@@ -15,8 +15,10 @@ const krediteProAnbieter = computed(() => {
 </script>
 
 <template>
-  <div class="flex column items-center q-pa-md" style="gap: 10px;">
-    <div class="text-h4">Tilgungspläne</div>
+  <div class="flex column items-center q-pa-md bg-white q-gutter-sm">
+    <div class="text-h4">
+      Tilgungspläne
+    </div>
 
     <div class="full-width">
       <q-list bordered class="rounded-borders">

@@ -25,17 +25,21 @@ const parts = computed(() =>
     }))
 
 const restschuld = computed(() => parts.value.map(v => v.restschuld).reduce((acc, cur) => acc + cur, 0))
+
+const link = computed(() => ({name: 'details', params: {anbieter: props.anbieter, title: props.title}}))
 </script>
 
 <template>
   <q-card bordered flat>
-    <q-card-section>
-      <div class="text-h6">
+    <q-card-section class="flex row justify-between q-pb-none">
+      <div class="text-bold">
         {{ props.title }}
       </div>
+
+      <q-btn icon="arrow_circle_right" color="primary" dense flat :to="link"/>
     </q-card-section>
 
-    <q-card-section>
+    <q-card-section class="q-pt-none">
       <ul>
         <li>
           <LabelValue label="Darlehensbetrag" :value="formatMoney(gesamt.darlehensbetrag)"/>
