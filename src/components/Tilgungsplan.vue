@@ -40,7 +40,7 @@ const columns = computed<QTableProps["columns"]>(() => {
     },
     {
       name: 'zahlung',
-      label: 'Zahlung',
+      label: 'Monatsrate',
       field: row => row.zahlung,
       format: formatMoney,
       align: 'right',

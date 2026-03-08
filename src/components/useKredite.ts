@@ -1,6 +1,7 @@
 import {computed, onMounted, ref} from "vue";
 import type {ZodError} from "zod";
 import {type KreditKonstellation, KreditKonstellationSchema} from "../types/KreditKonstellation.ts";
+import type {Zeitplan} from "../types/types.ts";
 
 class SchemaError extends Error {
     public readonly data?: unknown
@@ -48,4 +49,10 @@ export const useKredite = () => {
     })
 
     return computed(() => kredite.value ?? [])
+}
+
+export const useZeitplan = () => {
+    return computed<Zeitplan>(() => ({
+        auszahlungInMonaten: 18
+    }))
 }

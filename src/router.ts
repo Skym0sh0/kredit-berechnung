@@ -1,4 +1,4 @@
-import {createWebHistory, createRouter} from "vue-router";
+import {createRouter, createWebHistory} from "vue-router";
 import KrediteOverview from "./components/KrediteOverview.vue";
 import KreditDetails from "./components/KreditDetails.vue";
 
