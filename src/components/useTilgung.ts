@@ -1,14 +1,7 @@
 import {computed} from "vue";
 import {groupBy, sortBy} from "lodash";
 import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
-
-export type TilgungsProps = {
-    darlehensbetrag: number
-    sollzinsProJahr: number
-    zinsbindungInJahren: number
-    monatlicheRate: number
-    tilgungsfreieAnlaufMonate: number
-}
+import {useZeitplan} from "./useKredite.ts";
 
 export type FinanceInfo = {
     id: string
@@ -29,6 +22,8 @@ export type YearlyInfo = FinanceInfo & {
 }
 
 export const useTilgung = (props: KreditEigenschaften) => {
+    const zeitplan = useZeitplan()
+
     const monthlyData = computed<MonthlyInfo[]>(() => {
         const data: MonthlyInfo[] = [
             {
@@ -47,7 +42,7 @@ export const useTilgung = (props: KreditEigenschaften) => {
             const zinsen = remaining * props.sollzinsProJahr * (1 / 12)
             const tilgung = Math.min(Math.round(props.monatlicheRate * 100 - zinsen), remaining)
 
-            if (month >= (props.tilgungsfreieAnlaufMonate ?? 0))
+            if (month >= (props.tilgungsfreieAnlauf?.anlaufMonate ?? 0))
                 remaining = remaining - tilgung
 
             month++
@@ -56,7 +51,7 @@ export const useTilgung = (props: KreditEigenschaften) => {
                 id: 'month-' + month,
                 year: Math.floor(month / 12) + 1,
                 month: month,
-                zahlung: props.monatlicheRate,
+                zahlung: (zinsen + tilgung) / 100,
                 remaining: -remaining / 100,
                 zinsen: zinsen / 100,
                 tilgung: tilgung / 100,
