@@ -1,30 +1,31 @@
 import {z} from 'zod';
 import {type Bereitstellungszeit, BereitstellungszeitSchema} from "./Bereitstellungszeit.ts";
+import {type TilgungsfreierAnlauf, TilgungsfreierAnlaufSchema} from "./TilgungsfreierAnlauf.ts";
 
 export const KreditEigenschaftenSchema = z.object({
     title: z.string(),
 
     darlehensbetrag: z.number(),
     sollzinsProJahr: z.number(),
-    effektivZinsProJahr: z.optional(z.number()),
-    anfangsTilgung: z.optional(z.number()),
-    tilgungsfreieAnlaufMonate: z.optional(z.number()),
+    effektivZinsProJahr: z.number(),
+    anfangsTilgung: z.number(),
     zinsbindungInJahren: z.number(),
     monatlicheRate: z.number(),
-    monatlicheRateTilgungsfreieZeit: z.optional(z.number()),
+
+    tilgungsfreieAnlauf: z.optional(TilgungsfreierAnlaufSchema),
     bereitstellung: z.optional(BereitstellungszeitSchema)
 })
 
 export type KreditEigenschaften = {
     title: string,
+
     darlehensbetrag: number,
     sollzinsProJahr: number,
-    effektivZinsProJahr?: number,
-    anfangsTilgung?: number,
-    tilgungsfreieAnlaufMonate?: number,
+    effektivZinsProJahr: number,
+    anfangsTilgung: number,
     zinsbindungInJahren: number,
     monatlicheRate: number,
 
-    monatlicheRateTilgungsfreieZeit?: number,
+    tilgungsfreieAnlauf?: TilgungsfreierAnlauf,
     bereitstellung?: Bereitstellungszeit
 }
