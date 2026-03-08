@@ -35,6 +35,7 @@ export const KreditKonstellationSchema = z.object({
 })
 
 export type KreditKonstellation = {
+    anbieter: string,
     title: string,
     kreditTeile: KreditEigenschaften[]
 }
