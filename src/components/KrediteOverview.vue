@@ -1,45 +1,56 @@
 <script setup lang="ts">
-import {useKredite} from "./useKredite.ts";
-import KreditPlan from "./KreditPlan.vue";
-import {computed} from "vue";
-import {groupBy} from "lodash";
-import type {KreditKonstellation} from "../types/KreditKonstellation.ts";
+import {ref} from "vue";
+import {useAllgemeineBerechnungsvorschriftenProvide} from "./useAllgemeineBerechnungsvorschriften.ts";
 
-const kredite = useKredite()
+const folgeZinsSatzProJahrInProzent = ref(8)
+const auszahlungInMonaten = ref(18)
 
-const krediteProAnbieter = computed<Array<{ anbieter: string; kredite: KreditKonstellation[] }>>(() => {
-  const byAnbieter = groupBy(kredite.value, v => v.anbieter)
-
-  return Object.entries(byAnbieter)
-      .map(([anbieter, kredite]) => ({anbieter, kredite}))
-})
+useAllgemeineBerechnungsvorschriftenProvide(folgeZinsSatzProJahrInProzent, auszahlungInMonaten)
 </script>
 
 <template>
-  <div class="flex column items-center q-pa-md bg-white q-gutter-sm">
-    <div class="text-h4">
-      Tilgungspläne
-    </div>
+  <teleport to="#top_right_area">
+    <div class="flex row justify-start items-center q-col-gutter-md">
+      <q-input label="Auszahlung un Monaten"
+               v-model="auszahlungInMonaten"
+               type="number"
+               debounce="1000"
+               outlined
+               dense
+               bg-color="white"
+               :rules="[
+                 v => !!v || 'Monate müssen angegeben sein',
+                 v => 0 < v || 'Monate müssen positiv sein',
+             ]">
+        <template v-slot:prepend>
+          <q-icon name="calendar_month" color="info"/>
+        </template>
 
-    <div class="full-width">
-      <q-list bordered class="rounded-borders">
-        <q-expansion-item v-for="group in krediteProAnbieter"
-                          :key="group.anbieter"
-                          :label="group.anbieter"
-                          icon="currency_exchange"
-                          expand-separator
-                          default-opened
-                          header-class="bg-grey-2">
-          <div class="full-width flex row justify-start q-pa-md q-col-gutter-sm">
-            <div class="col-xs-12 col-md-4" v-for="kredit in group.kredite" :key="kredit.title">
-              <KreditPlan v-bind="kredit"/>
-            </div>
-          </div>
-        </q-expansion-item>
-      </q-list>
-    </div>
+        <template #append>M</template>
+      </q-input>
 
-  </div>
+      <q-input label="Folge Zinssatz"
+               v-model="folgeZinsSatzProJahrInProzent"
+               type="number"
+               debounce="1000"
+               outlined
+               dense
+               bg-color="white"
+               :rules="[
+                 v => !!v || 'Zinssatz muss gegeben sein',
+                 v => 0 <= v || 'Zinssatz muss positiv sein',
+             ]"
+      >
+        <template v-slot:prepend>
+          <q-icon name="paid" color="positive"/>
+        </template>
+
+        <template #append>%</template>
+      </q-input>
+    </div>
+  </teleport>
+
+  <RouterView/>
 </template>
 
 <style scoped>

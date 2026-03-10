@@ -9,4 +9,5 @@ export const BereitstellungszeitSchema = z.object({
 export type Bereitstellungszeit = {
     zinsfreieZeitInMonaten: number,
     zinsProMonat: number,
+    komplettAuszahlungNachMonaten?: number
 }

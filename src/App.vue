@@ -1,11 +1,16 @@
 <script setup lang="ts">
+
 </script>
 
 <template>
-  <nav class="flex row justify-start items-center q-gutter-sm q-pa-sm bg-info text-white sticky-top z-top">
-    <div class="text-h5">Kreditplaner</div>
+  <nav class="flex row justify-between items-center q-pa-sm bg-info text-white sticky-top z-top">
+    <div class="flex items-center justify-start q-gutter-sm">
+      <div class="text-h5">Kreditplaner</div>
 
-    <RouterLink to="/" class="text-h6 text-white">Tilgungspläne</RouterLink>
+      <RouterLink to="/" class="text-h6 text-white">Tilgungspläne</RouterLink>
+    </div>
+
+    <div id="top_right_area"/>
   </nav>
 
   <div class="q-mb-sm"/>

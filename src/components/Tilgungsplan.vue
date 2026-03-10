@@ -24,7 +24,7 @@ const columns = computed<QTableProps["columns"]>(() => {
       name: 'month',
       label: 'Monat',
       field: row => row.month,
-      format: month => month ? `${month % 12}` : '',
+      format: month => month ? `${month % 12 + 1}` : '',
       sortable: true,
       align: 'center',
       style: 'width: 30px'
@@ -78,7 +78,7 @@ const columns = computed<QTableProps["columns"]>(() => {
 })
 
 const title = computed(() => {
-  return `Tilgungsplan (${formatMoney(props.darlehensbetrag)} zu ${props.sollzinsProJahr * 100}% mit monatlich ${formatMoney(props.monatlicheRate)})`
+  return `Tilgungsplan (${formatMoney(props.darlehensbetrag)} zu ${formatPercent(props.sollzinsProJahr, 3)} mit monatlich ${formatMoney(props.monatlicheRate)})`
 })
 
 enum View {
