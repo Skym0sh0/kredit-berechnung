@@ -1,4 +1,4 @@
-import {computed, toValue} from "vue";
+import {computed} from "vue";
 import {groupBy, sortBy} from "lodash";
 import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
 import {useAllgemeineBerechnungsvorschriften} from "./useAllgemeineBerechnungsvorschriften.ts";
@@ -25,13 +25,6 @@ export type YearlyInfo = FinanceInfo & {
     month?: unknown
 }
 
-const assertIsLessOrEqual = (msg: string, ...values: number[]) => {
-    for (let i = 1; i < values.length; i++) {
-        if (!(values[i - 1] <= values[i])) {
-            throw new Error(`Values waren nicht aufsteigend groß: "${msg}": ${values[i - 1]} <= ${values[i]}`)
-        }
-    }
-}
 
 type MonatsZahlSatz = {
     zinssatz: number
@@ -40,11 +33,6 @@ type MonatsZahlSatz = {
 
 export const useTilgung = (props: KreditEigenschaften) => {
     const {folgeZinsSatzProJahr, auszahlungInMonaten} = useAllgemeineBerechnungsvorschriften()
-
-    const ablaufZinsbindungInMonaten = computed(() => {
-        return props.zinsbindungInJahren * 12
-    })
-
 
     const computeZinssatzProMonat = (monat: number): MonatsZahlSatz => {
         if (props.bereitstellung) {
@@ -68,69 +56,15 @@ export const useTilgung = (props: KreditEigenschaften) => {
             }
         }
 
-        return {
-            zinssatz: props.sollzinsProJahr
-        }
+        if (monat < props.zinsbindungInJahren * 12)
+            return {
+                zinssatz: props.sollzinsProJahr
+            }
+
+        return {zinssatz: folgeZinsSatzProJahr.value}
     }
 
-    const tmp = computed(() => {
-        console.log("------------------------------------------------")
-        console.log(toValue(props))
-
-        let month = 0;
-        let verbleibendeSchuld = props.darlehensbetrag
-
-        let gesamteZahlung = 0
-        let gesamteZinsZahlung = 0
-        let gesamteTilgungsZahlung = 0
-
-        while (verbleibendeSchuld > 0) {
-            month++
-
-
-            if (props.bereitstellung) {
-                if (month >= props.bereitstellung.zinsfreieZeitInMonaten) {
-
-                    if (props.bereitstellung.komplettAuszahlungNachMonaten) {
-                        props.sollzinsProJahr
-                    }
-
-                    props.bereitstellung.zinsProMonat
-                }
-            }
-
-
-            // if (month < auszahlungInMonaten.value)                continue
-
-
-            if (props.tilgungsfreieAnlauf) {
-            }
-
-            if (month >= ablaufZinsbindungInMonaten.value) {
-                folgeZinsSatzProJahr.value
-            }
-
-            const zinsen = verbleibendeSchuld * props.sollzinsProJahr * (1 / 12)
-            const tilgung = Math.min(Math.round(props.monatlicheRate - zinsen), verbleibendeSchuld)
-
-            verbleibendeSchuld -= tilgung
-
-            gesamteZahlung += zinsen + tilgung
-            gesamteZinsZahlung += zinsen
-            gesamteTilgungsZahlung += tilgung
-
-
-            console.log(month, Math.floor(month / 12), month % 12 + 1, verbleibendeSchuld, props.monatlicheRate, tilgung, zinsen, " -- ", computeZinssatzProMonat(month))
-        }
-
-        console.log(gesamteZahlung, gesamteZinsZahlung, gesamteTilgungsZahlung)
-
-        return 0;
-    })
-
-
     const monthlyData = computed<MonthlyInfo[]>(() => {
-        // console.log(tmp.value)
 
         const data: MonthlyInfo[] = [
             {
@@ -152,7 +86,7 @@ export const useTilgung = (props: KreditEigenschaften) => {
         let zahlungGesamt = 0
 
         while (remaining > 0) {
-            const zinssatz = month < props.zinsbindungInJahren * 12 ? props.sollzinsProJahr : folgeZinsSatzProJahr.value
+            const zinssatz = computeZinssatzProMonat(month).zinssatz
 
             const zinsen = remaining * zinssatz * (1 / 12)
             const tilgung = Math.min(Math.round(props.monatlicheRate * 100 - zinsen), remaining)
@@ -190,10 +124,7 @@ export const useTilgung = (props: KreditEigenschaften) => {
     */
 
     const yearlyData = computed<YearlyInfo[]>(() => {
-        console.log(monthlyData.value)
         const byYear = groupBy(monthlyData.value, v => v.year);
-
-        console.log(byYear)
 
         return sortBy(
             Object.values(byYear)
