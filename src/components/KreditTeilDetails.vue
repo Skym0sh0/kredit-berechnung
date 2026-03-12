@@ -3,8 +3,11 @@ import Tilgungsplan from "./Tilgungsplan.vue";
 import {formatMoney, formatPercent} from "./utils.ts";
 import LabelValue from "./LabelValue.vue";
 import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
+import {useTilgung} from "./useTilgung.ts";
 
 const props = defineProps<KreditEigenschaften & { idx: number }>()
+
+const {zinsenGesamt, restschuld} = useTilgung(props)
 </script>
 
 <template>
@@ -22,6 +25,11 @@ const props = defineProps<KreditEigenschaften & { idx: number }>()
       <LabelValue label="Zinsbindung" :value="props.zinsbindungInJahren + ' Jahre'"/>
       <LabelValue label="Anfängliche Tilgung" :value="formatPercent(props.anfangsTilgung,3)"/>
       <LabelValue label="Monatliche Rate" :value="formatMoney(props.monatlicheRate)"/>
+
+      <q-separator/>
+
+      <LabelValue label="Gesamtzinsen" :value="formatMoney(zinsenGesamt)"/>
+      <LabelValue label="Restschuld" :value="formatMoney(restschuld)"/>
     </q-card-section>
 
     <q-card-section>

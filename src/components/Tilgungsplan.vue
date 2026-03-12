@@ -18,16 +18,16 @@ const columns = computed<QTableProps["columns"]>(() => {
       field: row => row.year,
       sortable: true,
       align: 'center',
-      style: 'width: 30px'
+      style: 'width: 25px'
     },
     {
       name: 'month',
       label: 'Monat',
       field: row => row.month,
-      format: month => month ? `${month % 12 + 1}` : '',
+      format: month => month !== undefined ? `${month % 12 + 1}` : '',
       sortable: true,
       align: 'center',
-      style: 'width: 30px'
+      style: 'width: 25px'
     },
     {
       name: 'remaining',
@@ -40,7 +40,7 @@ const columns = computed<QTableProps["columns"]>(() => {
     },
     {
       name: 'zahlung',
-      label: 'Monatsrate',
+      label: 'Zahlung',
       field: row => row.zahlung,
       format: formatMoney,
       align: 'right',
@@ -71,8 +71,36 @@ const columns = computed<QTableProps["columns"]>(() => {
       label: 'Verhältnis',
       field: row => ({zinsen: row.zinsen / row.zahlung, tilgung: row.tilgung / row.zahlung}),
       format: v => `${formatPercent(v.tilgung)} / ${formatPercent(v.zinsen)}`,
+      align: 'center',
+      sortable: true,
+    },
+
+    {
+      name: 'zinsenGesamt',
+      label: 'Zinsen Gesamt',
+      field: row => row.zinsenGesamt,
+      format: formatMoney,
       align: 'right',
       sortable: true,
+      style: 'width: 125px'
+    },
+    {
+      name: 'tilgungGesamt',
+      label: 'Tilgung Gesamt',
+      field: row => row.tilgungGesamt,
+      format: formatMoney,
+      align: 'right',
+      sortable: true,
+      style: 'width: 125px'
+    },
+    {
+      name: 'zahlungGesamt',
+      label: 'Zahlung Gesamt',
+      field: row => row.zahlungGesamt,
+      format: formatMoney,
+      align: 'right',
+      sortable: true,
+      style: 'width: 125px'
     },
   ];
 })

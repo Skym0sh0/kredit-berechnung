@@ -1,7 +1,7 @@
-import {computed} from "vue";
+import {computed, toValue} from "vue";
 import {groupBy, sortBy} from "lodash";
 import type {KreditEigenschaften} from "../types/KreditEigenschaften.ts";
-import {useZeitplan} from "./useKredite.ts";
+import {useAllgemeineBerechnungsvorschriften} from "./useAllgemeineBerechnungsvorschriften.ts";
 
 export type FinanceInfo = {
     id: string
@@ -9,6 +9,10 @@ export type FinanceInfo = {
     zahlung: number
     zinsen?: number
     tilgung?: number
+
+    zinsenGesamt: number
+    tilgungGesamt: number
+    zahlungGesamt: number
 }
 
 export type MonthlyInfo = FinanceInfo & {
@@ -21,10 +25,113 @@ export type YearlyInfo = FinanceInfo & {
     month?: unknown
 }
 
+const assertIsLessOrEqual = (msg: string, ...values: number[]) => {
+    for (let i = 1; i < values.length; i++) {
+        if (!(values[i - 1] <= values[i])) {
+            throw new Error(`Values waren nicht aufsteigend groß: "${msg}": ${values[i - 1]} <= ${values[i]}`)
+        }
+    }
+}
+
+type MonatsZahlSatz = {
+    zinssatz: number
+    // tilgungssatz:number
+}
+
 export const useTilgung = (props: KreditEigenschaften) => {
-    const zeitplan = useZeitplan()
+    const {folgeZinsSatzProJahr, auszahlungInMonaten} = useAllgemeineBerechnungsvorschriften()
+
+    const ablaufZinsbindungInMonaten = computed(() => {
+        return props.zinsbindungInJahren * 12
+    })
+
+
+    const computeZinssatzProMonat = (monat: number): MonatsZahlSatz => {
+        if (props.bereitstellung) {
+            if (monat < props.bereitstellung.zinsfreieZeitInMonaten) {
+                // bereitstellungsfreie zeit
+                return {
+                    zinssatz: 0
+                }
+            } else if (monat >= props.bereitstellung.zinsfreieZeitInMonaten && monat < auszahlungInMonaten.value) {
+                // bereitstellungszeit
+                // bis zur auszahlung
+                if (monat < (props.bereitstellung.komplettAuszahlungNachMonaten ?? 0)) {
+                    return {
+                        zinssatz: props.bereitstellung.zinsProMonat
+                    }
+                }
+
+                return {
+                    zinssatz: props.sollzinsProJahr
+                }
+            }
+        }
+
+        return {
+            zinssatz: props.sollzinsProJahr
+        }
+    }
+
+    const tmp = computed(() => {
+        console.log("------------------------------------------------")
+        console.log(toValue(props))
+
+        let month = 0;
+        let verbleibendeSchuld = props.darlehensbetrag
+
+        let gesamteZahlung = 0
+        let gesamteZinsZahlung = 0
+        let gesamteTilgungsZahlung = 0
+
+        while (verbleibendeSchuld > 0) {
+            month++
+
+
+            if (props.bereitstellung) {
+                if (month >= props.bereitstellung.zinsfreieZeitInMonaten) {
+
+                    if (props.bereitstellung.komplettAuszahlungNachMonaten) {
+                        props.sollzinsProJahr
+                    }
+
+                    props.bereitstellung.zinsProMonat
+                }
+            }
+
+
+            // if (month < auszahlungInMonaten.value)                continue
+
+
+            if (props.tilgungsfreieAnlauf) {
+            }
+
+            if (month >= ablaufZinsbindungInMonaten.value) {
+                folgeZinsSatzProJahr.value
+            }
+
+            const zinsen = verbleibendeSchuld * props.sollzinsProJahr * (1 / 12)
+            const tilgung = Math.min(Math.round(props.monatlicheRate - zinsen), verbleibendeSchuld)
+
+            verbleibendeSchuld -= tilgung
+
+            gesamteZahlung += zinsen + tilgung
+            gesamteZinsZahlung += zinsen
+            gesamteTilgungsZahlung += tilgung
+
+
+            console.log(month, Math.floor(month / 12), month % 12 + 1, verbleibendeSchuld, props.monatlicheRate, tilgung, zinsen, " -- ", computeZinssatzProMonat(month))
+        }
+
+        console.log(gesamteZahlung, gesamteZinsZahlung, gesamteTilgungsZahlung)
+
+        return 0;
+    })
+
 
     const monthlyData = computed<MonthlyInfo[]>(() => {
+        // console.log(tmp.value)
+
         const data: MonthlyInfo[] = [
             {
                 id: 'start-month',
@@ -32,20 +139,31 @@ export const useTilgung = (props: KreditEigenschaften) => {
                 month: 0,
                 remaining: -props.darlehensbetrag,
                 zahlung: -props.darlehensbetrag,
+                zinsenGesamt: 0,
+                tilgungGesamt: 0,
+                zahlungGesamt: 0,
             }
         ]
 
         let month = 0
         let remaining = Math.round(props.darlehensbetrag * 100)
+        let zinsenGesamt = 0
+        let tilgungGesamt = 0
+        let zahlungGesamt = 0
 
-        while (month < props.zinsbindungInJahren * 12) {
-            const zinsen = remaining * props.sollzinsProJahr * (1 / 12)
+        while (remaining > 0) {
+            const zinssatz = month < props.zinsbindungInJahren * 12 ? props.sollzinsProJahr : folgeZinsSatzProJahr.value
+
+            const zinsen = remaining * zinssatz * (1 / 12)
             const tilgung = Math.min(Math.round(props.monatlicheRate * 100 - zinsen), remaining)
 
             if (month >= (props.tilgungsfreieAnlauf?.anlaufMonate ?? 0))
                 remaining = remaining - tilgung
 
-            month++
+
+            zinsenGesamt += zinsen / 100
+            tilgungGesamt += tilgung / 100
+            zahlungGesamt += (zinsen + tilgung) / 100
 
             data.push({
                 id: 'month-' + month,
@@ -55,10 +173,12 @@ export const useTilgung = (props: KreditEigenschaften) => {
                 remaining: -remaining / 100,
                 zinsen: zinsen / 100,
                 tilgung: tilgung / 100,
+                zinsenGesamt,
+                tilgungGesamt,
+                zahlungGesamt,
             })
 
-            if (remaining <= 0)
-                break;
+            month++
         }
 
         return data
@@ -70,35 +190,36 @@ export const useTilgung = (props: KreditEigenschaften) => {
     */
 
     const yearlyData = computed<YearlyInfo[]>(() => {
-        const byYear = groupBy(monthlyData.value, v => Math.floor((v.month - 1) / 12));
+        console.log(monthlyData.value)
+        const byYear = groupBy(monthlyData.value, v => v.year);
+
+        console.log(byYear)
 
         return sortBy(
             Object.values(byYear)
                 .map((months): YearlyInfo => {
-                    if (months.length === 1 && months[0] && months[0].month === 0)
-                        return {
-                            id: 'start-year',
-                            year: 0,
-                            remaining: months[0].remaining,
-                            zahlung: months[0].zahlung,
-                        }
-
-
-                    const tmp = months.reduce<Pick<YearlyInfo, 'remaining' | 'zahlung' | 'tilgung' | 'zinsen'>>((year, month) => ({
-                            remaining: Math.min(year.remaining, month.remaining),
+                    const tmp = months.reduce<Pick<YearlyInfo, 'remaining' | 'zahlung' | 'tilgung' | 'zinsen' | 'zinsenGesamt' | 'tilgungGesamt' | 'zahlungGesamt'>>
+                    ((year, month) => ({
+                            remaining: Math.max(year.remaining, month.remaining),
                             zahlung: year.zahlung + month.zahlung,
                             tilgung: (year.tilgung ?? 0) + (month.tilgung ?? 0),
                             zinsen: (year.zinsen ?? 0) + (month.zinsen ?? 0),
+                            zinsenGesamt: Math.max(year.zinsenGesamt, month.zinsenGesamt),
+                            tilgungGesamt: Math.max(year.tilgungGesamt, month.tilgungGesamt),
+                            zahlungGesamt: Math.max(year.zahlungGesamt, month.zahlungGesamt),
                         }),
                         {
-                            remaining: 0,
+                            remaining: -Number.MAX_SAFE_INTEGER,
                             zahlung: 0,
                             tilgung: 0,
                             zinsen: 0,
+                            zinsenGesamt: 0,
+                            tilgungGesamt: 0,
+                            zahlungGesamt: 0,
                         })
 
 
-                    const year = Math.floor((months[0]?.month ?? 0) / 12) + 1
+                    const year = months[0]?.year ?? 0
 
                     return {
                         id: 'year-' + year,
@@ -107,6 +228,9 @@ export const useTilgung = (props: KreditEigenschaften) => {
                         remaining: tmp.remaining,
                         zinsen: tmp.zinsen,
                         tilgung: tmp.tilgung,
+                        zinsenGesamt: tmp.zinsenGesamt,
+                        tilgungGesamt: tmp.tilgungGesamt,
+                        zahlungGesamt: tmp.zahlungGesamt,
                     }
                 }),
             v => v.year)
@@ -117,6 +241,9 @@ export const useTilgung = (props: KreditEigenschaften) => {
         yearlyData,
         restschuld: computed(() => {
             return monthlyData.value[monthlyData.value.length - 1]?.remaining ?? 0
+        }),
+        zinsenGesamt: computed(() => {
+            return monthlyData.value[monthlyData.value.length - 1]?.zinsenGesamt ?? 0
         })
     }
 }
