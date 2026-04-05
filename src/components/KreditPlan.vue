@@ -60,7 +60,7 @@ const link = computed(() => ({name: 'details', params: {anbieter: props.anbieter
           <div class="text-caption text-grey q-px-md">
             <LabelValue v-for="p in parts"
                         :key="p.title"
-                        :label="`${p.title} nach ${p.zinsbindungInJahren}`"
+                        :label="`${p.title} nach ${p.zinsbindungInJahren} Jahren`"
                         :value="formatMoney(p.restschuld)"/>
           </div>
         </li>

@@ -13,6 +13,7 @@ useAllgemeineBerechnungsvorschriftenProvide(folgeZinsSatzProJahrInProzent, ausza
     <div class="flex row justify-start items-center q-col-gutter-md">
       <q-input label="Auszahlung un Monaten"
                v-model="auszahlungInMonaten"
+               v-if="false"
                type="number"
                debounce="1000"
                outlined

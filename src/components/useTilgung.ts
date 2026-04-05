@@ -25,103 +25,77 @@ export type YearlyInfo = FinanceInfo & {
     month?: unknown
 }
 
+export type SimulatedCompleteLiquidation = {
+    laufzeitInMonaten: number
+    anfangsRestschuld: number
+    monatlicheRate: number
+    gesamtZahlung: number
+    gesamteZinsen: number
+}
 
-type MonatsZahlSatz = {
-    zinssatz: number
-    // tilgungssatz:number
+const simulateTimeline = (darlehensbetrag: number, sollzinsProJahr: number, monatlicheRate: number, abbruchBedingung ?: (month: number) => boolean) => {
+    const data: MonthlyInfo[] = [
+        {
+            id: 'start-month',
+            year: 0,
+            month: 0,
+            remaining: -darlehensbetrag,
+            zahlung: -darlehensbetrag,
+            zinsenGesamt: 0,
+            tilgungGesamt: 0,
+            zahlungGesamt: 0,
+        }
+    ]
+
+    let month = 0
+    let remaining = darlehensbetrag * 100
+    let zinsenGesamt = 0
+    let tilgungGesamt = 0
+    let zahlungGesamt = 0
+
+    while (remaining > 0) {
+        const zinssatz = sollzinsProJahr
+
+        const zinsen = remaining * zinssatz * (1 / 12)
+
+        const tilgung = Math.min(Math.round(monatlicheRate * 100 - zinsen), remaining)
+
+        remaining = remaining - tilgung
+
+        zinsenGesamt += zinsen / 100
+        tilgungGesamt += tilgung / 100
+        zahlungGesamt += (zinsen + tilgung) / 100
+
+        data.push({
+            id: 'month-' + month,
+            year: Math.floor(month / 12) + 1,
+            month: month,
+            zahlung: (zinsen + tilgung) / 100,
+            remaining: -remaining / 100,
+            zinsen: zinsen / 100,
+            tilgung: tilgung / 100,
+            zinsenGesamt,
+            tilgungGesamt,
+            zahlungGesamt,
+        })
+
+        month++
+
+        if (abbruchBedingung?.(month)) {
+            break
+        }
+    }
+
+    return data
+
 }
 
 export const useTilgung = (props: KreditEigenschaften) => {
-    const {folgeZinsSatzProJahr, auszahlungInMonaten} = useAllgemeineBerechnungsvorschriften()
-
-    const computeZinssatzProMonat = (monat: number): MonatsZahlSatz => {
-        if (props.bereitstellung) {
-            if (monat < props.bereitstellung.zinsfreieZeitInMonaten) {
-                // bereitstellungsfreie zeit
-                return {
-                    zinssatz: 0
-                }
-            } else if (monat >= props.bereitstellung.zinsfreieZeitInMonaten && monat < auszahlungInMonaten.value) {
-                // bereitstellungszeit
-                // bis zur auszahlung
-                if (monat < (props.bereitstellung.komplettAuszahlungNachMonaten ?? 0)) {
-                    return {
-                        zinssatz: props.bereitstellung.zinsProMonat
-                    }
-                }
-
-                return {
-                    zinssatz: props.sollzinsProJahr
-                }
-            }
-        }
-
-        if (monat < props.zinsbindungInJahren * 12)
-            return {
-                zinssatz: props.sollzinsProJahr
-            }
-
-        return {zinssatz: folgeZinsSatzProJahr.value}
-    }
+    const {folgeZinsSatzProJahr} = useAllgemeineBerechnungsvorschriften()
 
     const monthlyData = computed<MonthlyInfo[]>(() => {
-
-        const data: MonthlyInfo[] = [
-            {
-                id: 'start-month',
-                year: 0,
-                month: 0,
-                remaining: -props.darlehensbetrag,
-                zahlung: -props.darlehensbetrag,
-                zinsenGesamt: 0,
-                tilgungGesamt: 0,
-                zahlungGesamt: 0,
-            }
-        ]
-
-        let month = 0
-        let remaining = Math.round(props.darlehensbetrag * 100)
-        let zinsenGesamt = 0
-        let tilgungGesamt = 0
-        let zahlungGesamt = 0
-
-        while (remaining > 0) {
-            const zinssatz = computeZinssatzProMonat(month).zinssatz
-
-            const zinsen = remaining * zinssatz * (1 / 12)
-            const tilgung = Math.min(Math.round(props.monatlicheRate * 100 - zinsen), remaining)
-
-            if (month >= (props.tilgungsfreieAnlauf?.anlaufMonate ?? 0))
-                remaining = remaining - tilgung
-
-
-            zinsenGesamt += zinsen / 100
-            tilgungGesamt += tilgung / 100
-            zahlungGesamt += (zinsen + tilgung) / 100
-
-            data.push({
-                id: 'month-' + month,
-                year: Math.floor(month / 12) + 1,
-                month: month,
-                zahlung: (zinsen + tilgung) / 100,
-                remaining: -remaining / 100,
-                zinsen: zinsen / 100,
-                tilgung: tilgung / 100,
-                zinsenGesamt,
-                tilgungGesamt,
-                zahlungGesamt,
-            })
-
-            month++
-        }
-
-        return data
+        return simulateTimeline(props.darlehensbetrag, props.sollzinsProJahr, props.monatlicheRate, month => month >= props.zinsbindungInJahren * 12)
     })
-
-    /* TODO: hier müsste man beachten, dass ein kredit mit langer laufzeit aber kürzer zinsbindung trotzdem als "wie gehabt " eingerechnet wird
-     d.h. nach z.b. 10 jahren zinsbindung, aber laufzeit von 30 jahren, werden die monatlichen kosten trotzdem nach den ersten 10 jahren weiter
-     angenommen und als tilgung der anschluss finanzierung gedacht
-    */
 
     const yearlyData = computed<YearlyInfo[]>(() => {
         const byYear = groupBy(monthlyData.value, v => v.year);
@@ -167,14 +141,51 @@ export const useTilgung = (props: KreditEigenschaften) => {
             v => v.year)
     })
 
+    const restschuld = computed(() => {
+        const monthlys = monthlyData.value
+        return monthlys[monthlys.length - 1]?.remaining ?? 0
+    });
+
+    const zinsenGesamt = computed(() => {
+        const monthlys = monthlyData.value
+        return monthlys[monthlys.length - 1]?.zinsenGesamt ?? 0
+    });
+
+    const simulierteVolltilgungData = computed<MonthlyInfo[]>(() => {
+        if (-restschuld.value <= 0)
+            return []
+
+        const restDarlehen = -restschuld.value
+
+        const newRate = (folgeZinsSatzProJahr.value + props.anfangsTilgung) * restDarlehen / 12
+
+        return simulateTimeline(restDarlehen, folgeZinsSatzProJahr.value, Math.max(props.monatlicheRate, newRate))
+    })
+
+    const simulierteVolltilgung = computed(() => {
+        const data = simulierteVolltilgungData.value
+
+        if (data.length < 1)
+            return undefined
+
+        const firstZahlung = data[1];
+        const lastZahlung = data[data.length - 1];
+
+        return {
+            anfangsRestschuld: -restschuld.value,
+            laufzeitInMonaten: lastZahlung?.month ?? 0,
+            gesamtZahlung: lastZahlung?.zahlungGesamt ?? 0,
+            monatlicheRate: firstZahlung?.zahlung ?? 0,
+            gesamteZinsen: lastZahlung?.zinsenGesamt ?? 0,
+        }
+    })
+
     return {
         monthlyData,
         yearlyData,
-        restschuld: computed(() => {
-            return monthlyData.value[monthlyData.value.length - 1]?.remaining ?? 0
-        }),
-        zinsenGesamt: computed(() => {
-            return monthlyData.value[monthlyData.value.length - 1]?.zinsenGesamt ?? 0
-        })
+        restschuld: restschuld,
+        zinsenGesamt: zinsenGesamt,
+        simulierteVolltilgungData,
+        simulierteVolltilgung,
     }
 }
